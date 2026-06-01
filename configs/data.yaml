@@ -1,0 +1,37 @@
+# configs/data.yaml — data acquisition + preprocessing (Phase 1, notebooks/01_data_prep.ipynb).
+# Everything heavy is written under drive_root so a Colab disconnect never forces a re-download.
+
+drive_root: /content/drive/MyDrive/be-hpg
+
+download:
+  source: monai_s3        # monai_s3 | manual
+  # MONAI's MSD mirror. VERIFIED LIVE 2026-05-31 (HTTP 200): Task09_Spleen.tar = 1.61 GB,
+  # Task07_Pancreas.tar = 12.29 GB. If ever unreachable, fall back to `manual` (see README)
+  # and drop the tar at  {drive_root}/downloads/<Task>.tar  by hand.
+  monai_s3_base: https://msd-for-monai.s3-us-west-2.amazonaws.com
+  manual_fallback_dir: /content/drive/MyDrive/be-hpg/downloads
+
+tasks:
+  spleen:                 # SCOPE: do this one first and fully
+    msd_name: Task09_Spleen
+    modality: CT
+    fg_labels: [1]        # spleen
+    approx_size_gb: 1.5
+  pancreas:               # stretch goal only if Spleen finishes early
+    msd_name: Task07_Pancreas
+    modality: CT
+    fg_labels: [1, 2]     # pancreas + tumor both count as foreground
+    approx_size_gb: 12
+
+preprocess:
+  axis: axial
+  min_fg_ratio: 0.01      # discard slices with < 1% foreground
+  hu_window: [-125, 275]  # clip HU, THEN normalize
+  normalize: minmax_01
+  resize: 224             # bilinear for image, nearest for mask
+  save_format: npz_compressed   # one .npz per task: images, masks, vol_ids, slice_idx
+  manifest_csv: true            # records volume id per slice for patient-disjoint episodes
+
+visualize:
+  n_overlays: 6           # sample slice+mask overlays saved to paper/figures/
+  out_dir: paper/figures

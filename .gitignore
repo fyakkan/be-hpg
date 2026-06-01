@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Data & heavy artifacts — these live on Google Drive, never in git.
+# NOTE: leading slash anchors to repo root so this does NOT match src/data/.
+/data/
+*.tar
+*.tar.gz
+*.nii
+*.nii.gz
+*.npz
+/checkpoints/
+*.pt
+*.pth
+*.ckpt
+
+# Keep results JSON + figures in git (they are the evidence); ignore bulky blobs
+results/**/*.pt
+results/**/*.pth
+
+# Colab run exports / smoke-run scratch (kept locally, not committed)
+results/*.pdf
+results/*_smoke*
+
+# Code bundle uploaded to Colab/Drive (regenerated from src/ + configs/)
+be-hpg-src.zip
+# Canvas submission bundle (regenerated from paper/)
+be-hpg-paper.zip
+
+# Internal planning / progress docs and the original proposal — kept local, not published
+PLAN.md
+PROGRESS.md
+Research_Proposal_BE-HPG*.pdf
+
+# OS
+.DS_Store
+Thumbs.db
+
+# LaTeX build artifacts (compiled paper PDF is regenerated on Overleaf)
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.synctex.gz
+paper/*.toc
+paper/main.pdf

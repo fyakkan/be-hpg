@@ -1,0 +1,14 @@
+\begin{table}[t]
+\centering
+\caption{1-shot HD95 (px) before/after largest-connected-component (LCC). LCC removes off-target predictions; BE-HPG benefits most, exposing its precise organ boundary.}
+\label{tab:rawlcc}
+\begin{tabular}{lcc}
+\toprule
+Method & HD95 raw & HD95 + LCC \\
+\midrule
+ProtoNet & 28.3 & 3.8 \\
+Meta-RCNN-style & 12.8 & 3.5 \\
+BE-HPG (ours) & 44.8 & 2.9 \\
+\bottomrule
+\end{tabular}
+\end{table}

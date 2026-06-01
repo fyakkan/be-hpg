@@ -1,0 +1,53 @@
+# configs/base.yaml — shared defaults. Model configs set `base: base.yaml` and the
+# loader (src/utils/config.py, Phase 2) deep-merges base <- model <- CLI overrides.
+# Configs are the SINGLE SOURCE OF TRUTH: every run is reproducible from a config + seed.
+
+seed: 42
+device: cuda            # local smoke tests / CPU runs override to "cpu"
+amp: true               # mixed precision (fp16) on T4; cosine-sim math kept in fp32
+input_size: 224
+embed_dim: 256          # common projection dim; features L2-normalized for cosine
+num_classes: 1          # binary FG/BG -> single sigmoid logit
+
+data:
+  task: spleen                          # spleen | pancreas  (scope: SPLEEN only)
+  npz_dir: /content/drive/MyDrive/be-hpg/data/spleen
+  manifest: /content/drive/MyDrive/be-hpg/data/spleen/manifest.csv
+  hu_window: [-125, 275]                # abdominal soft-tissue CT window, then min-max -> [0,1]
+  min_fg_ratio: 0.01                    # keep axial slices with >= 1% foreground
+  split_by: volume                      # patient/volume-disjoint splits (no leakage)
+  split_fracs: { train: 0.60, val: 0.15, test: 0.25 }
+  split_seed: 42
+  augment: { hflip: true, intensity_jitter: 0.10, random_crop: false }
+
+episode:
+  k_shot_train: [1, 5]                  # sampled per-episode (train once, eval both)
+  query_size: 2                         # query slices per episode
+  patient_disjoint: true                # support and query from different volumes
+
+train:
+  episodes: 1500                        # Leaner & safest scope (proposal full = 10000)
+  optimizer: adamw
+  lr: 1.0e-4                            # grid {1e-4, 5e-5}
+  weight_decay: 0.01
+  lr_schedule: cosine
+  batch_query: 2
+  ckpt_every: 250                       # resumable: save opt/sched/episode/RNG to Drive
+  ckpt_dir: /content/drive/MyDrive/be-hpg/checkpoints
+  resume: true
+  grad_clip: 1.0
+
+eval:
+  test_episodes: 150                    # FIXED set, reused across all 3 methods (fairness)
+  k_shots: [1, 5]
+  threshold: 0.5
+  episode_seed: 1234                    # pins the exact 150 test episodes
+  results_dir: /content/drive/MyDrive/be-hpg/results
+
+loss:
+  balanced_bce: true        # per-batch foreground pos_weight on the main BCE (all models, fairness)
+  bce_max_pos_weight: 20     # clamp for the balanced pos_weight
+
+metrics: [dice, iou, hd95, asd]
+surface_empty_rule: both_nonempty       # HD95/ASD only where pred & GT both non-empty;
+                                        # report the excluded fraction (no fabricated penalty)

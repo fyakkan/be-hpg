@@ -1,0 +1,27 @@
+# configs/be_hpg.yaml — Proposed: Boundary-Enhanced Hard Prototype Generation.
+# Lightweight ViT backbone + SSP boundary-band hard prototypes (mini-batch k-means)
+# + cosine query matching + 1x1 conv/sigmoid head + boundary loss.
+base: base.yaml
+
+model:
+  name: be_hpg
+  backbone: mobilevit_s           # PRIMARY (~5.6M params). Secondary ablation: deit_tiny_patch16_224
+  backbone_feature_stride: 8      # finer boundary band; out_index confirmed in Phase-2 smoke test
+  pretrained: true
+  distance: cosine
+  temperature: 20.0               # head initialized to temp*(sim_fg - sim_bg) cosine prior
+  head: conv1x1_sigmoid           # on [max_fg_sim, bg_sim] stack -> 1 logit -> upsample -> sigmoid
+  ssp:                            # Support Self-Prediction module = boundary-band hard prototypes
+    use_ssp: true                 # false -> plain global prototypes only (SSP-vs-GAP ablation)
+    boundary_kernel: 3            # dilation/erosion kernel for the band {3, 5}
+    kmeans_clusters: 5            # number of hard prototypes from the boundary band {3, 5}
+    kmeans_impl: minibatch        # sklearn.cluster.MiniBatchKMeans
+    use_fg_interior_prototype: true
+    use_bg_prototype: true
+    # Edge cases (see tests/test_kmeans_edgecases.py): band tokens < clusters -> reduce k
+    # to #tokens or fall back to FG mean; no-FG support -> resample episode.
+
+loss:
+  bce: true
+  boundary_lambda: 0.3            # L_total = L_BCE + lambda * L_boundary ; grid {0,0.1,0.3,0.5}
+  boundary_pos_weight: 5.0        # weight on Sobel-GT boundary pixels in the weighted BCE

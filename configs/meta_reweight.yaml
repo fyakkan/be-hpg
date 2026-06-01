@@ -1,0 +1,20 @@
+# configs/meta_reweight.yaml — Baseline 2: Meta-RCNN-INSPIRED segmentation baseline.
+# DISCLOSURE: Meta R-CNN (Yan et al., 2019) is a DETECTOR. We adapt its core idea —
+# support-conditioned, class-attentive channel reweighting of features — to dense
+# segmentation: a reweighting vector from masked support pooling modulates the query
+# feature maps channel-wise, then a small conv head predicts the mask. This adaptation
+# is stated plainly in the paper's Materials & Methods.
+base: base.yaml
+
+model:
+  name: meta_reweight
+  backbone: resnet50
+  backbone_feature_stride: 8
+  pretrained: true
+  reweight_hidden: 256            # MLP that maps masked-pooled support vector -> channel weights
+  reweight_activation: sigmoid    # channel gate in [0,1]
+  seg_head: [conv3x3, relu, conv1x1]   # on reweighted query features -> 1 logit
+
+loss:
+  bce: true
+  boundary_lambda: 0.0

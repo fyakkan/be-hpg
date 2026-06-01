@@ -1,0 +1,27 @@
+{
+  "model": "be_hpg",
+  "backbone": "mobilevit_s",
+  "lambda": 0.3,
+  "train_episodes": 1500,
+  "eval_episodes": 150,
+  "by_shot": {
+    "1shot": {
+      "dice": 0.8798822826147079,
+      "iou": 0.7933964771032334,
+      "hd95": 44.831628833818826,
+      "asd": 13.414473897877057,
+      "n": 300,
+      "n_surface": 300,
+      "surface_excluded_frac": 0.0
+    },
+    "5shot": {
+      "dice": 0.8852624479929606,
+      "iou": 0.8006348499655723,
+      "hd95": 43.08851394359897,
+      "asd": 12.269613403788775,
+      "n": 300,
+      "n_surface": 300,
+      "surface_excluded_frac": 0.0
+    }
+  }
+}

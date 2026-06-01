@@ -1,0 +1,16 @@
+# configs/protonet.yaml — Baseline 1: Prototypical Network (Snell et al., 2017).
+# Masked global average pooling -> class prototype; cosine query matching.
+base: base.yaml
+
+model:
+  name: protonet
+  backbone: resnet50              # CNN baseline, ImageNet pretrained
+  backbone_feature_stride: 8      # stride-8 stage (~28x28 @224) for dense matching
+  pretrained: true
+  distance: cosine                # cosine | euclidean
+  temperature: 20.0               # scales cosine logits before sigmoid/softmax
+  use_bg_prototype: true          # FG + BG prototype contrast
+
+loss:
+  bce: true
+  boundary_lambda: 0.0            # no boundary loss in baseline

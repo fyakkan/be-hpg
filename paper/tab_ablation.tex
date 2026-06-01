@@ -1,0 +1,15 @@
+\begin{table}[t]
+\centering
+\caption{Boundary-loss weight $\lambda$ ablation for BE-HPG on Spleen (1-shot, 1000 episodes, no post-processing). A small $\lambda$ slightly helps Dice, but HD95 worsens monotonically as $\lambda$ grows. Best in \textbf{bold}.}
+\label{tab:ablation}
+\begin{tabular}{ccc}
+\toprule
+$\lambda$ & Dice & HD95$\downarrow$ \\
+\midrule
+0.0 & 0.865 & \textbf{34.2} \\
+0.1 & \textbf{0.874} & 44.8 \\
+0.3 & 0.857 & 53.9 \\
+0.5 & 0.841 & 62.0 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "be-hpg"
+version = "0.1.0"
+description = "Boundary-Enhanced Hard Prototype Generation (BE-HPG) for Few-Shot Medical Image Segmentation"
+authors = [{ name = "Furkan Yakkan", email = "furkan.yakkan@agu.edu.tr" }]
+requires-python = ">=3.9"
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+# Make `import src.*` work when running pytest from the repo root (local CPU smoke gate).
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"

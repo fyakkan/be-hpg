@@ -1,0 +1,2 @@
+# CPU smoke tests live here (Phase 2): test_protonet, test_meta_reweight, test_be_hpg,
+# test_losses, test_metrics, test_sampler, test_kmeans_edgecases, test_preprocess.

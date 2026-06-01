@@ -1,0 +1,27 @@
+{
+  "model": "protonet",
+  "backbone": "resnet50",
+  "lambda": 0.0,
+  "train_episodes": 1500,
+  "eval_episodes": 150,
+  "by_shot": {
+    "1shot": {
+      "dice": 0.8778901376326879,
+      "iou": 0.7868321432669958,
+      "hd95": 28.261051304465255,
+      "asd": 7.505181695986354,
+      "n": 300,
+      "n_surface": 300,
+      "surface_excluded_frac": 0.0
+    },
+    "5shot": {
+      "dice": 0.8680681049823761,
+      "iou": 0.771516410112381,
+      "hd95": 30.20735687976618,
+      "asd": 7.966328491515401,
+      "n": 300,
+      "n_surface": 300,
+      "surface_excluded_frac": 0.0
+    }
+  }
+}

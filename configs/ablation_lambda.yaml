@@ -1,0 +1,12 @@
+# configs/ablation_lambda.yaml — PRIMARY ablation (chosen scope): boundary-loss weight lambda.
+# Sweeps lambda for BE-HPG on Spleen with a cheaper episode budget. lambda=0 is the
+# "no boundary loss" point; the rest test the boundary emphasis.
+base: be_hpg.yaml
+
+ablation:
+  name: boundary_lambda
+  param: loss.boundary_lambda
+  grid: [0.0, 0.1, 0.3, 0.5]
+
+train:
+  episodes: 1000          # cheaper than the main run; stated as such in the paper

@@ -1,5 +1,4 @@
 {
-  "model": "meta_reweight",
   "by_shot": {
     "1shot": {
       "dice": 0.8976463758945465,
@@ -39,5 +38,6 @@
       "n_surface": 300,
       "surface_excluded_frac": 0.0
     }
-  }
+  },
+  "model": "meta_reweight"
 }

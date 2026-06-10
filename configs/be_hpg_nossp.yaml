@@ -1,0 +1,11 @@
+# configs/be_hpg_nossp.yaml — SSP ablation: BE-HPG WITHOUT the boundary-band hard prototypes.
+# Identical to be_hpg.yaml (same MobileViT-S backbone, boundary loss, class-balanced BCE,
+# temperature, lambda) EXCEPT the SSP hard-prototype channel is removed (use_ssp: false),
+# leaving only the global FG/BG prototypes + 1x1 conv head. This isolates the contribution of
+# the SSP hard prototypes under the same LCC post-processing as the main comparison.
+base: be_hpg.yaml
+
+model:
+  name: be_hpg
+  ssp:
+    use_ssp: false                # <-- the only change vs. the full model

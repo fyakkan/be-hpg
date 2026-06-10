@@ -17,11 +17,12 @@ from .train import _move
 
 @torch.no_grad()
 def eval_episodes(model, sampler, *, episodes, k_shot=1, device="cpu", threshold=0.5,
-                  postprocess=None):
+                  postprocess=None, return_samples=False):
     """Run `episodes` eval episodes at a fixed K; return the MetricAccumulator summary.
 
     postprocess="lcc" keeps only the largest connected component of each prediction
-    (applied identically to all models).
+    (applied identically to all models). With return_samples=True the per-slice metric
+    lists are returned alongside the summary as (summary, raw) for bootstrap CIs.
     """
     model.to(device).eval()
     acc = MetricAccumulator()
@@ -34,6 +35,8 @@ def eval_episodes(model, sampler, *, episodes, k_shot=1, device="cpu", threshold
                 from ..metrics.postprocess import largest_connected_component
                 pred = torch.from_numpy(largest_connected_component(pred.cpu().numpy())).to(pred)
             acc.update(pred, qry_mask[q, 0])
+    if return_samples:
+        return acc.summary(), acc.raw()
     return acc.summary()
 
 

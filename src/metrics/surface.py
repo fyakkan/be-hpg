@@ -57,3 +57,16 @@ class MetricAccumulator:
             "n_surface": self.n_surface,
             "surface_excluded_frac": (self.n_excluded / self.n) if self.n else 0.0,
         }
+
+    def raw(self) -> dict:
+        """Per-slice metric lists, for bootstrap confidence intervals.
+
+        Dice/IoU have `n` entries (all slices); HD95/ASD have `n_surface` entries (the
+        both-non-empty slices only). Lists are plain floats so they serialise to JSON.
+        """
+        return {
+            "dice": [float(x) for x in self.dice],
+            "iou": [float(x) for x in self.iou],
+            "hd95": [float(x) for x in self.hd95],
+            "asd": [float(x) for x in self.asd],
+        }

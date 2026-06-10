@@ -1,5 +1,4 @@
 {
-  "model": "be_hpg",
   "by_shot": {
     "1shot": {
       "dice": 0.8798822826147079,
@@ -39,5 +38,6 @@
       "n_surface": 300,
       "surface_excluded_frac": 0.0
     }
-  }
+  },
+  "model": "be_hpg"
 }

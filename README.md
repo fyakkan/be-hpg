@@ -22,15 +22,20 @@ The full write-up is in [`paper/main.tex`](paper/main.tex) (IEEEtran conference,
 | Meta-RCNN-style | 0.906 / 0.898 | 0.830 / 0.819 | 3.5 / 4.0 | 1.4 / 1.4 |
 | **BE-HPG (ours)** | **0.930 / 0.926** | **0.871 / 0.867** | **2.9 / 3.4** | **1.0 / 1.3** |
 
-BE-HPG is best on every metric, including boundary accuracy. (Single seed, 1500 training
-episodes — a compute-limited study; see the paper's Limitations.)
+BE-HPG is best on every metric, including boundary accuracy; the 1-shot Dice gap is supported by
+non-overlapping 95% bootstrap confidence intervals. A focused SSP-vs-global ablation is an **honest
+negative result**: on this large, well-bounded organ the hard prototypes are inert (Dice 0.930 vs
+0.929), so the win is owed to the ViT backbone and boundary-aware training, not the SSP prototypes —
+the boundary machinery is expected to matter on the thin/boundary-critical targets this Spleen
+proxy cannot test. (Single training seed, 1500 episodes — a compute-limited *proxy* study on a
+healthy organ; see the paper's Limitations.)
 
 ## Repository layout
 ```
 configs/     YAML configs (single source of truth): base, data, per-model, ablation
 src/         data · models · losses · metrics · engine · utils
 tests/       CPU smoke tests (pytest) — the bug-prevention gate before any GPU run
-notebooks/   Colab: 01_data_prep · 02_train_eval · 03_ablations · 04_eval_postprocess
+notebooks/   Colab: 01_data_prep · 02_train_eval · 03_ablations · 04_eval_postprocess · 05_revision
 results/     metrics JSON + qualitative figures from the experiments
 paper/       IEEEtran paper (main.tex, refs.bib, tab_*.tex, figures/, IEEEtran.cls)
 ```
@@ -45,6 +50,8 @@ to Google Drive (`/content/drive/MyDrive/be-hpg/`).
 2. **`notebooks/02_train_eval.ipynb`** — train + evaluate all three models (1-/5-shot).
 3. **`notebooks/03_ablations.ipynb`** — boundary-loss weight λ ∈ {0, 0.1, 0.3, 0.5}.
 4. **`notebooks/04_eval_postprocess.ipynb`** — re-evaluate with largest-connected-component.
+5. **`notebooks/05_revision.ipynb`** — 95% bootstrap confidence intervals, the SSP-vs-global
+   ablation (`configs/be_hpg_nossp.yaml`), and the pre-LCC off-target failure figure.
 
 Each notebook uses a small `be-hpg-src.zip` of `src/` + `configs/` (uploaded once, cached on Drive).
 
@@ -53,7 +60,7 @@ Each notebook uses a small `be-hpg-src.zip` of `src/` + `configs/` (uploaded onc
 python3 -m venv .venv && source .venv/bin/activate
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
-pytest                                   # 31 CPU smoke tests
+pytest                                   # 37 CPU smoke tests
 python -m src.utils.aggregate            # regenerate paper tables from results/
 python -m src.utils.figures              # regenerate the pipeline figure
 ```

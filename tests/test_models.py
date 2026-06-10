@@ -19,13 +19,24 @@ def _cfg(name, backbone, **model_extra):
 _SSP = {"boundary_kernel": 3, "kmeans_clusters": 3,
         "use_fg_interior_prototype": True, "use_bg_prototype": True}
 
+_SSP_OFF = {**_SSP, "use_ssp": False}      # SSP ablation: global prototypes only
+
 CONFIGS = [
     _cfg("protonet", "resnet50"),
     _cfg("meta_reweight", "resnet50", reweight_hidden=64),
     _cfg("be_hpg", "mobilevit_s", ssp=_SSP),
+    _cfg("be_hpg", "mobilevit_s", ssp=_SSP_OFF),
     _cfg("be_hpg", "deit_tiny_patch16_224", ssp=_SSP),
 ]
-IDS = [f"{c['model']['name']}-{c['model']['backbone']}" for c in CONFIGS]
+def _id(c):
+    tag = f"{c['model']['name']}-{c['model']['backbone']}"
+    ssp = c["model"].get("ssp")
+    if ssp is not None and not ssp.get("use_ssp", True):
+        tag += "-nossp"
+    return tag
+
+
+IDS = [_id(c) for c in CONFIGS]
 
 
 def _episode(H=224, K=2, Q=2):

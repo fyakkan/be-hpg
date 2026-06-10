@@ -23,6 +23,22 @@ def _sampler(H=64):
                            k_shots=[1], query_size=2, seed=0)
 
 
+def test_eval_return_samples_with_lcc():
+    """Revision path: per-slice metric lists are returned for bootstrap CIs (with LCC)."""
+    from src.utils.bootstrap import bootstrap_ci
+
+    torch.manual_seed(0)
+    model = ProtoNet(backbone="resnet50", embed_dim=32, stride=8, pretrained=False)
+    sampler = _sampler()
+    summ, raw = eval_episodes(model, sampler, episodes=3, k_shot=1, device="cpu",
+                              postprocess="lcc", return_samples=True)
+    assert summ["n"] == 6
+    assert len(raw["dice"]) == 6 and len(raw["iou"]) == 6      # all slices
+    assert len(raw["hd95"]) == summ["n_surface"]               # both-non-empty only
+    m, lo, hi = bootstrap_ci(raw["dice"], n_boot=200, seed=0)
+    assert lo <= m <= hi
+
+
 def test_train_eval_checkpoint(tmp_path):
     torch.manual_seed(0)
     model = ProtoNet(backbone="resnet50", embed_dim=32, stride=8, pretrained=False)

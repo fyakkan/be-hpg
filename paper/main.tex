@@ -26,7 +26,8 @@
 \begin{document}
 
 \title{Boundary-Enhanced Hard Prototype Generation for\\
-Few-Shot Medical Image Segmentation of Rare Organ Malformations}
+Few-Shot Medical Image Segmentation:\\
+A Controlled Proxy Study Toward Rare Organ Malformations}
 
 \author{\IEEEauthorblockN{Furkan Yakkan}
 \IEEEauthorblockA{Abdullah G\"ul University, Kayseri, T\"urkiye\\
@@ -45,11 +46,19 @@ morphological dilation minus erosion and clusters its tokens with mini-batch $k$
 \emph{hard} prototypes, combined with global foreground/background prototypes and an auxiliary
 boundary loss. We conduct a controlled comparison study of three methods---a Prototypical
 Network, a Meta-RCNN-inspired feature-reweighting baseline, and BE-HPG---under identical
-episodes on the Spleen task of the Medical Segmentation Decathlon. With a standard
-largest-connected-component post-processing applied to all methods, BE-HPG attains the best
-Dice ($0.930$ at 1-shot), IoU, and---notably---boundary accuracy (HD95 $2.9$\,px, ASD
-$1.0$\,px), outperforming both baselines. We further analyse the boundary-loss weight and the
-effect of post-processing, and we openly report the reduced compute budget and resulting
+episodes on the Spleen task of the Medical Segmentation Decathlon. We treat the Spleen, a
+well-defined organ with a continuous soft-tissue boundary, as a controlled \emph{proxy} for the
+boundary-critical malformations the method ultimately targets; the rare-malformation setting
+itself is motivated rather than directly tested. With a standard largest-connected-component
+post-processing applied to all methods, BE-HPG attains the best Dice ($0.930$ at 1-shot), IoU,
+and---notably---boundary accuracy (HD95 $2.9$\,px, ASD $1.0$\,px), outperforming both
+baselines; the Dice gap is supported by non-overlapping $95\%$ bootstrap confidence intervals.
+An ablation that removes the SSP hard prototypes leaves Spleen accuracy unchanged, an honest
+negative result showing that on a large, well-defined organ the gains come from the backbone and
+boundary-aware training rather than the hard prototypes themselves---consistent with our premise
+that boundary-focused components are suited to thin or boundary-critical targets the proxy cannot
+directly test. We further analyse the boundary-loss weight, the off-target activations that
+post-processing removes, and we openly report the reduced compute budget and resulting
 limitations. Code: \url{\repourl}.
 \end{abstract}
 
@@ -83,13 +92,21 @@ Crucially, we frame this paper as a \emph{controlled comparison study} rather th
 advocacy of a single method. We implement and evaluate three approaches under identical
 episodic sampling, augmentation, and hardware: (i) a Prototypical Network~\cite{snell2017prototypical},
 (ii) a Meta-RCNN-inspired feature-reweighting baseline~\cite{yan2019meta} (whose adaptation we
-disclose plainly in Section~\ref{sec:methods}), and (iii) the proposed BE-HPG. Our
-contributions are: (1) a faithful, reproducible implementation of the three methods with a
-shared evaluation harness; (2) BE-HPG, which combines SSP boundary-hard prototypes with global
-prototypes and a boundary loss; and (3) an honest empirical analysis on MSD Spleen---including
-the effect of the boundary-loss weight and of largest-connected-component post-processing---that
-shows where the boundary-enhanced design helps and where it does not. All code and configurations
-are released at \url{\repourl}.
+disclose plainly in Section~\ref{sec:methods}), and (iii) the proposed BE-HPG.
+
+We are deliberately careful about scope. Curated public datasets of rare organ malformations are
+not readily available, so we evaluate on the MSD Spleen task and treat it as a \emph{proxy}: the
+spleen is a single, anatomically consistent organ with a continuous soft-tissue contour, which
+lets us measure boundary localisation cleanly while sharing the severe foreground/background
+imbalance of the target setting. The proxy isolates the mechanism (boundary-focused prototypes)
+without claiming that healthy-organ performance transfers to genuine malformations; that transfer
+remains future work. Our contributions are: (1) a faithful, reproducible implementation of the
+three methods with a shared evaluation harness; (2) BE-HPG, which combines SSP boundary-hard
+prototypes with global prototypes and a boundary loss; and (3) an honest empirical analysis on
+MSD Spleen---with $95\%$ bootstrap confidence intervals, an SSP-versus-global ablation, the
+effect of the boundary-loss weight, and an analysis of the off-target activations that
+largest-connected-component post-processing removes---that shows where the boundary-enhanced
+design helps and where it does not. All code and configurations are released at \url{\repourl}.
 
 %------------------------------------------------------------------------------
 \section{Related Work}
@@ -260,7 +277,26 @@ boundary-band tokens, while the centroids used for matching are recomputed as di
 means of their assigned tokens, so that gradients still reach the encoder. Checkpoints are
 written periodically and all runs are resumable. The data-preparation, training, and evaluation
 notebooks, together with the exact configurations and a CPU test suite, are released at
-\url{\repourl}.
+\url{\repourl}. Each run is fully determined by a single configuration entry point,
+\texttt{configs/base.yaml} deep-merged with \texttt{configs/<model>.yaml}; the end-to-end
+reproduction is:
+
+{\footnotesize
+\begin{verbatim}
+git clone https://github.com/fyakkan/be-hpg
+cd be-hpg && pytest          # 37 CPU smoke tests
+# Colab (free T4), run notebooks in order:
+#  01_data_prep  -> MSD Spleen .npz on Drive
+#  02_train_eval -> train+eval all 3 models
+#  03_ablations  -> boundary-loss weight lambda
+#  04_eval_postprocess -> LCC re-eval
+#  05_revision   -> bootstrap CIs + SSP ablation
+python -m src.utils.aggregate  # rebuild tables
+\end{verbatim}}
+
+\noindent where the per-model entry points are \texttt{configs/protonet.yaml},
+\texttt{configs/meta\_reweight.yaml}, \texttt{configs/be\_hpg.yaml}, and the ablation
+\texttt{configs/be\_hpg\_nossp.yaml}.
 
 %------------------------------------------------------------------------------
 \section{Results and Discussion}
@@ -271,8 +307,41 @@ notebooks, together with the exact configurations and a CPU test suite, are rele
 All three methods segment the spleen well (Dice $\ge 0.89$), as expected for a large, well-defined
 organ. BE-HPG attains the best score on \emph{every} metric at both shot settings---Dice $0.930$,
 IoU $0.871$, HD95 $2.9$\,px, and ASD $1.0$\,px at $1$-shot---outperforming the Prototypical Network
-and the reweighting baseline, and in particular achieving the best \emph{boundary} accuracy, which
-is consistent with its boundary-enhanced design.
+and the reweighting baseline on overlap as well as on \emph{boundary} accuracy after
+post-processing. As the ablations below show, on this large organ that advantage is driven by the
+lightweight ViT backbone and the boundary-aware, class-balanced training rather than by the
+boundary-specific SSP prototypes themselves.
+
+\input{tab_ci.tex}
+
+\textbf{Confidence intervals.} Because compute permitted only a single training seed, we quantify
+the remaining sampling variability with a non-parametric bootstrap over the fixed test episodes:
+we resample the per-slice scores with replacement ($2000$ resamples) and report the $95\%$
+percentile interval of the mean (Table~\ref{tab:ci}). The intervals are tight given the $300$
+query slices, and BE-HPG's $1$-shot Dice interval does not overlap those of either baseline,
+indicating that the improvement is not an artefact of episode sampling. We stress that this is an
+\emph{within-seed} interval over the test set, not a cross-seed interval; a multi-seed study
+remains the stronger test and is left to future work owing to the compute budget.
+
+\input{tab_ssp.tex}
+
+\textbf{Contribution of the SSP hard prototypes (ablation).} To isolate the effect of the
+proposed Support Self-Prediction module, we retrain BE-HPG with the SSP hard-prototype channel
+removed (\texttt{use\_ssp{=}false}), matching queries against only the global
+foreground/background prototypes while keeping the identical MobileViT-S backbone, boundary loss,
+class-balanced BCE, episodes, and LCC post-processing. Table~\ref{tab:ssp} shows the two variants
+to be \emph{statistically indistinguishable} on Spleen (Dice $0.930$ vs.\ $0.929$, IoU $0.871$
+vs.\ $0.870$, HD95 $2.9$ vs.\ $2.9$\,px), with fully overlapping bootstrap intervals. We report
+this as a deliberate negative result and explain it: the hard-prototype channel is initialised
+with zero weight---the head begins as a pure global-prototype classifier
+(Section~\ref{sec:methods})---and on a large, well-bounded organ the training signal gives little
+incentive to turn it on, so the module is effectively switched off and contributes nothing here.
+The implication is honest and specific: on the Spleen proxy the advantage of BE-HPG over the
+baselines comes from the lightweight ViT backbone and the boundary-aware, class-balanced training,
+\emph{not} from the SSP prototypes. This dovetails with the $\lambda$ ablation below, where
+boundary emphasis likewise fails to help a large organ, and it sharpens the paper's central
+caveat: the SSP machinery is built for thin or boundary-critical targets, exactly what a
+healthy-organ benchmark cannot exercise.
 
 \textbf{Effect of shot count.} Across all three methods the $5$-shot scores are on par with, or
 marginally below, the $1$-shot scores (for example BE-HPG Dice $0.930\!\rightarrow\!0.926$). On a
@@ -293,6 +362,34 @@ component---removes these spurious activations and benefits all methods, but BE-
 HD95 of $44.8$\,px drops to $2.9$\,px, the lowest of the three. In other words, the core organ
 prediction of BE-HPG is the most accurate; the off-target false positives, not the boundary
 localisation, were responsible for its poor raw surface metric.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{prelcc_failure.png}
+  \caption{Failure mode before post-processing. For two held-out query slices we show, left to
+  right, the query image, ground truth, the \emph{raw} BE-HPG prediction, and the prediction after
+  LCC. The raw masks contain a correct spleen segmentation \emph{plus} small off-target
+  activations elsewhere in the abdomen (arrows); these distant false-positive components contribute
+  almost nothing to Dice (they are tiny) yet dominate HD95, which is why the raw surface metric is
+  poor. LCC keeps only the largest component and removes them.}
+  \label{fig:prelcc}
+\end{figure}
+
+\textbf{Failure cases: off-target activations.} Fig.~\ref{fig:prelcc} makes this failure mode
+concrete. The dense cosine-prototype matching is sensitive to local texture, and in a minority of
+slices it fires on unrelated structures with a similar local appearance (e.g.\ the edge of the
+stomach or a vessel wall) far from the spleen. Because these components are small, they barely move
+the region-overlap metrics---BE-HPG's raw Dice is already competitive at $0.880$---but a single
+distant false-positive pixel can set the $95$th-percentile surface distance to tens of pixels,
+which is exactly the gap we observe between the raw ($44.8$\,px) and LCC ($2.9$\,px) HD95. The same
+behaviour appears with the SSP channel removed (raw HD95 $45.0$ vs.\ $44.8$\,px), confirming that
+the off-target activations are a property of the prototype matching in this architecture and
+\emph{not} of the hard prototypes. We report this openly: BE-HPG trades a higher off-target
+false-positive rate for the most accurate core-organ prediction, and a single anatomically
+motivated LCC step (valid because the spleen is one connected organ) recovers the benefit. On
+genuinely multi-focal pathologies LCC would not be appropriate, and a learned spatial prior or
+connected-component-aware loss would be the principled replacement---a concrete direction for
+future work.
 
 \input{tab_ablation.tex}
 
@@ -343,20 +440,29 @@ shows the two baselines on the same slices for visual comparison.
 We presented a controlled comparison of three few-shot medical segmentation methods and proposed
 BE-HPG, which augments global prototypes with SSP boundary-hard prototypes and a boundary loss on a
 lightweight ViT backbone. On MSD Spleen, with post-processing applied equally to all methods,
-BE-HPG achieves the best overlap and boundary metrics. Our analysis also exposes two honest
-caveats: BE-HPG's hard-prototype matching can produce off-target activations that a
-largest-connected-component step is needed to remove, and a strong boundary-loss weight degrades
-surface metrics on a large organ.
+BE-HPG achieves the best overlap and boundary metrics. Our analysis also exposes three honest
+caveats: BE-HPG's prototype matching can produce off-target activations that a
+largest-connected-component step is needed to remove; a strong boundary-loss weight degrades
+surface metrics on a large organ; and, in a direct ablation, the SSP hard prototypes themselves
+leave Spleen accuracy unchanged---the boundary machinery is simply not exercised by a large,
+well-bounded organ, so the win here is owed to the backbone and the boundary-aware training.
 
-\textbf{Limitations.} The study is compute-limited: a single seed, $1500$ training and $150$ test
-episodes, and a single (Spleen) task, all on a free-tier GPU. The absolute scores are therefore
-single-run estimates, and the central premise---segmentation of \emph{rare malformations} with thin
-or irregular boundaries---is approximated, not directly tested, by a healthy-organ benchmark.
+\textbf{Limitations.} The study is compute-limited: a single training seed, $1500$ training and
+$150$ test episodes, and a single (Spleen) task, all on a free-tier GPU. We report $95\%$
+bootstrap confidence intervals over the test episodes, which bound the sampling variability but
+\emph{not} the variance across training seeds; the absolute scores remain single-seed estimates.
+Most importantly, the central premise---segmentation of \emph{rare malformations} with thin or
+irregular boundaries---is \emph{approximated, not directly tested}: the Spleen serves as a
+controlled boundary-defined proxy, and healthy-organ performance is not claimed to transfer to
+genuine malformations.
 
-\textbf{Future work.} Extending the evaluation to the Pancreas task, multiple seeds with confidence
-intervals, the full episode budget, the DeiT-Tiny backbone and SSP-versus-global ablations, and---
-most importantly---a dataset of genuine boundary-critical pathologies would more directly test the
-boundary-enhanced hypothesis.
+\textbf{Future work.} The strongest remaining tests are a multi-seed study with cross-seed
+confidence intervals, the full episode budget, and the Pancreas task; but the decisive step is a
+dataset of genuine boundary-critical pathologies. Our ablation found the SSP hard prototypes to be
+inert on the Spleen proxy---a large, well-bounded organ does not exercise boundary-focused
+machinery---so only a thin- or irregular-boundary target can establish whether the SSP mechanism
+delivers the improvement it is designed for. That, rather than further healthy-organ benchmarking,
+is the test that matters.
 
 %------------------------------------------------------------------------------
 \section*{Acknowledgment}

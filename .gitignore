@@ -33,8 +33,9 @@ results/*_smoke*
 
 # Code bundle uploaded to Colab/Drive (regenerated from src/ + configs/)
 be-hpg-src.zip
-# Canvas submission bundle (regenerated from paper/)
+# Canvas submission bundle (regenerated from paper/) + its local unzip
 be-hpg-paper.zip
+/be-hpg-paper/
 
 # Internal planning / progress docs and the original proposal — kept local, not published
 PLAN.md

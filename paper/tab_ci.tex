@@ -1,0 +1,14 @@
+\begin{table}[t]
+\centering
+\caption{95\% bootstrap confidence intervals (2000 resamples over the fixed $1$-shot test episodes, with LCC). Intervals quantify the sampling variability of the single-seed estimate; non-overlapping Dice intervals separate BE-HPG from the baselines.}
+\label{tab:ci}
+\begin{tabular}{lcc}
+\toprule
+Method & Dice & HD95$\downarrow$ (px) \\
+\midrule
+ProtoNet & 0.896$_{[0.890,\,0.901]}$ & 3.8$_{[3.5,\,4.2]}$ \\
+Meta-RCNN-style & 0.905$_{[0.900,\,0.911]}$ & 3.5$_{[3.2,\,3.8]}$ \\
+BE-HPG (ours) & 0.930$_{[0.925,\,0.934]}$ & 2.9$_{[2.6,\,3.3]}$ \\
+\bottomrule
+\end{tabular}
+\end{table}

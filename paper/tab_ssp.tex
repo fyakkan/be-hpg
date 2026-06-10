@@ -1,0 +1,13 @@
+\begin{table}[t]
+\centering
+\caption{Ablation of the SSP boundary-band hard prototypes ($1$-shot, with LCC, same backbone, loss, episodes, and post-processing; the only change is the SSP channel). On this large, well-defined organ the two variants are statistically indistinguishable (overlapping $95\%$ CIs): the zero-initialised hard-prototype channel is not engaged by training on a spatially large target---an honest negative result discussed in the text.}
+\label{tab:ssp}
+\begin{tabular}{lccc}
+\toprule
+Variant & Dice (95\% CI) & IoU & HD95$\downarrow$ \\
+\midrule
+BE-HPG (full, +SSP) & 0.930$_{[0.925,\,0.934]}$ & 0.871 & 2.9 \\
+BE-HPG w/o SSP & 0.929$_{[0.925,\,0.934]}$ & 0.870 & 2.9 \\
+\bottomrule
+\end{tabular}
+\end{table}

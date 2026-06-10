@@ -275,28 +275,21 @@ Backbones are loaded from \texttt{timm} with ImageNet-1K pretrained weights and 
 end-to-end. The hard prototypes use scikit-learn's mini-batch $k$-means on the detached
 boundary-band tokens, while the centroids used for matching are recomputed as differentiable
 means of their assigned tokens, so that gradients still reach the encoder. Checkpoints are
-written periodically and all runs are resumable. The data-preparation, training, and evaluation
-notebooks, together with the exact configurations and a CPU test suite, are released at
-\url{\repourl}. Each run is fully determined by a single configuration entry point,
-\texttt{configs/base.yaml} deep-merged with \texttt{configs/<model>.yaml}; the end-to-end
-reproduction is:
+written periodically and all runs are resumable. The notebooks, exact configurations, and a CPU
+test suite are released at \url{\repourl}. Each run is determined by a single configuration entry
+point, \texttt{configs/base.yaml} deep-merged with \texttt{configs/<model>.yaml} (the per-model
+entries being \texttt{protonet}, \texttt{meta\_reweight}, \texttt{be\_hpg}, and the SSP ablation
+\texttt{be\_hpg\_nossp}); end-to-end reproduction is:
 
 {\footnotesize
 \begin{verbatim}
 git clone https://github.com/fyakkan/be-hpg
-cd be-hpg && pytest          # 37 CPU smoke tests
-# Colab (free T4), run notebooks in order:
-#  01_data_prep  -> MSD Spleen .npz on Drive
-#  02_train_eval -> train+eval all 3 models
-#  03_ablations  -> boundary-loss weight lambda
-#  04_eval_postprocess -> LCC re-eval
-#  05_revision   -> bootstrap CIs + SSP ablation
-python -m src.utils.aggregate  # rebuild tables
+cd be-hpg && pytest      # 37 CPU smoke tests
+# Colab (free T4): run notebooks 01_data_prep,
+# 02_train_eval, 03_ablations, 04_eval_postprocess,
+# 05_revision (bootstrap CIs + SSP ablation), then
+python -m src.utils.aggregate   # rebuild tables
 \end{verbatim}}
-
-\noindent where the per-model entry points are \texttt{configs/protonet.yaml},
-\texttt{configs/meta\_reweight.yaml}, \texttt{configs/be\_hpg.yaml}, and the ablation
-\texttt{configs/be\_hpg\_nossp.yaml}.
 
 %------------------------------------------------------------------------------
 \section{Results and Discussion}
@@ -319,9 +312,8 @@ the remaining sampling variability with a non-parametric bootstrap over the fixe
 we resample the per-slice scores with replacement ($2000$ resamples) and report the $95\%$
 percentile interval of the mean (Table~\ref{tab:ci}). The intervals are tight given the $300$
 query slices, and BE-HPG's $1$-shot Dice interval does not overlap those of either baseline,
-indicating that the improvement is not an artefact of episode sampling. We stress that this is an
-\emph{within-seed} interval over the test set, not a cross-seed interval; a multi-seed study
-remains the stronger test and is left to future work owing to the compute budget.
+indicating the improvement is not an artefact of episode sampling. This is a \emph{within-seed}
+interval over the test set, not a cross-seed one; a multi-seed study remains the stronger test.
 
 \input{tab_ssp.tex}
 
@@ -334,14 +326,13 @@ to be \emph{statistically indistinguishable} on Spleen (Dice $0.930$ vs.\ $0.929
 vs.\ $0.870$, HD95 $2.9$ vs.\ $2.9$\,px), with fully overlapping bootstrap intervals. We report
 this as a deliberate negative result and explain it: the hard-prototype channel is initialised
 with zero weight---the head begins as a pure global-prototype classifier
-(Section~\ref{sec:methods})---and on a large, well-bounded organ the training signal gives little
-incentive to turn it on, so the module is effectively switched off and contributes nothing here.
-The implication is honest and specific: on the Spleen proxy the advantage of BE-HPG over the
-baselines comes from the lightweight ViT backbone and the boundary-aware, class-balanced training,
-\emph{not} from the SSP prototypes. This dovetails with the $\lambda$ ablation below, where
-boundary emphasis likewise fails to help a large organ, and it sharpens the paper's central
-caveat: the SSP machinery is built for thin or boundary-critical targets, exactly what a
-healthy-organ benchmark cannot exercise.
+(Section~\ref{sec:methods})---and on a large, well-bounded organ training gives little incentive to
+turn it on, so the module is effectively switched off here. The implication is specific: on the
+Spleen proxy the advantage of BE-HPG over the baselines comes from the lightweight ViT backbone and
+the boundary-aware, class-balanced training, \emph{not} from the SSP prototypes. This dovetails
+with the $\lambda$ ablation below, where boundary emphasis likewise fails to help a large organ,
+and it sharpens the paper's central caveat: the SSP machinery is built for thin or boundary-critical
+targets, exactly what a healthy-organ benchmark cannot exercise.
 
 \textbf{Effect of shot count.} Across all three methods the $5$-shot scores are on par with, or
 marginally below, the $1$-shot scores (for example BE-HPG Dice $0.930\!\rightarrow\!0.926$). On a
@@ -410,28 +401,22 @@ the per-batch class-balanced BCE of Eq.~(\ref{eq:total})---applied identically t
 removed this collapse and is what makes the comparison meaningful. We report this explicitly
 because it is a practical prerequisite for a fair few-shot medical segmentation benchmark.
 
-\textbf{Qualitative results.} Fig.~\ref{fig:qual} shows BE-HPG predictions on held-out query
-slices; the predicted masks closely follow the ground-truth spleen contour. Fig.~\ref{fig:qual_base}
-shows the two baselines on the same slices for visual comparison.
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.78\columnwidth]{qualitative_be_hpg.png}
-  \caption{Qualitative BE-HPG results on held-out test episodes (query image, ground truth,
-  prediction). Predictions track the spleen boundary closely.}
-  \label{fig:qual}
-\end{figure}
+\textbf{Qualitative results.} Fig.~\ref{fig:qual} compares all three methods on identical
+held-out query slices. Every method's predicted mask tracks the ground-truth spleen contour
+closely; the differences that matter on this organ are the rare off-target activations discussed
+above, which post-processing removes.
 
 \begin{figure*}[t]
   \centering
-  \includegraphics[height=0.30\textheight]{qualitative_protonet.png}\hfil
-  \includegraphics[height=0.30\textheight]{qualitative_meta.png}
-  \caption{Qualitative baseline results on the same held-out query slices: the Prototypical
-  Network (left) and the Meta-RCNN-inspired reweighting baseline (right). Each panel shows, per
-  row, the query image, ground truth, and prediction. All methods segment the spleen well; the
-  differences that matter on this organ are in the rare off-target activations that
-  post-processing removes (Table~\ref{tab:rawlcc}).}
-  \label{fig:qual_base}
+  \includegraphics[height=0.27\textheight]{qualitative_be_hpg.png}\hfil
+  \includegraphics[height=0.27\textheight]{qualitative_protonet.png}\hfil
+  \includegraphics[height=0.27\textheight]{qualitative_meta.png}
+  \caption{Qualitative comparison on identical held-out query slices. Left to right: BE-HPG
+  (ours), the Prototypical Network, and the Meta-RCNN-inspired reweighting baseline; within each
+  panel the columns are query image, ground truth, and prediction, one query slice per row. All
+  three segment the spleen well, and the visible differences are the rare off-target activations
+  that largest-connected-component post-processing removes (Table~\ref{tab:rawlcc}).}
+  \label{fig:qual}
 \end{figure*}
 
 %------------------------------------------------------------------------------
@@ -457,12 +442,10 @@ controlled boundary-defined proxy, and healthy-organ performance is not claimed 
 genuine malformations.
 
 \textbf{Future work.} The strongest remaining tests are a multi-seed study with cross-seed
-confidence intervals, the full episode budget, and the Pancreas task; but the decisive step is a
-dataset of genuine boundary-critical pathologies. Our ablation found the SSP hard prototypes to be
-inert on the Spleen proxy---a large, well-bounded organ does not exercise boundary-focused
-machinery---so only a thin- or irregular-boundary target can establish whether the SSP mechanism
-delivers the improvement it is designed for. That, rather than further healthy-organ benchmarking,
-is the test that matters.
+confidence intervals, the full episode budget, and the Pancreas task. But the decisive step is a
+dataset of genuine boundary-critical pathologies: since our ablation found the SSP prototypes inert
+on a large organ, only a thin- or irregular-boundary target can establish whether the mechanism
+delivers the improvement it is designed for.
 
 %------------------------------------------------------------------------------
 \section*{Acknowledgment}
